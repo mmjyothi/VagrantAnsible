@@ -1,0 +1,14 @@
+
+
+upstream goapp {
+	server {{app01}};
+}
+
+server {
+	listen 80;
+
+	location / {
+		proxy_pass http://goapp;
+	}
+}
+

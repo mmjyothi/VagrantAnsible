@@ -1,0 +1,23 @@
+---
+# tasks file for loadbalancer
+
+- name:      nginx | Open firewall ports
+  ufw:       rule={{item.rule}} port={{item.port}} proto={{item.proto}}
+  with_items:
+   - { rule: allow, port: 80,   proto: tcp }   # Default HTTP port
+   - { rule: allow, port: 443,  proto: tcp }   # Default HTTPS port
+
+- name:       nginx | install nginx
+  apt:        pkg=nginx state=latest
+
+- name:       nginx | install site configuration
+  template:   src=sainsburys.j2 dest=/etc/nginx/sites-available/sainsburys mode=0600 owner=root group=root
+  notify:     reload nginx
+
+- name:       nginx | enable site configuration
+  file:       src=/etc/nginx/sites-available/sainsburys state=link dest=/etc/nginx/sites-enabled/sainsburys
+  notify:     reload nginx
+
+- name:       nginx | disable site configuration
+  file:       path=/etc/nginx/sites-enabled/default state=absent
+  notify:     reload nginx

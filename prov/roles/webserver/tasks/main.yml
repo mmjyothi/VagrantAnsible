@@ -1,0 +1,43 @@
+---
+# tasks file for webserver
+
+ - name:          webapp | Open firewall ports
+   ufw:           rule={{item.rule}} port={{item.port}} proto={{item.proto}}
+   with_items:
+   - { rule: allow, port: 8088,  proto: tcp }   # Default HTTPS port
+
+ - name:          webapp | install packages
+   apt:           pkg={{item}} state=latest
+   with_items:
+   - golang
+   - supervisor
+
+ - name:          webapp | create Group gouser
+   group:         name=gouser state=present
+    
+ - name:          webapp | create User gouser
+   user:          name=gouser group=gouser shell=/bin/bash 
+
+ - name: ensure mysql started
+   service: name=supervisor state=started enabled=yes
+
+
+ - name:          webapp | create a directory for the application
+   file:          path=/opt/webserver/ state=directory mode=0755
+
+ - name:          webapp | deploy the application
+   copy:          src=webserver.go dest=/opt/webserver/webserver.go owner=gouser group=gouser mode=755
+   register:      _code
+ 
+ - name:          webapp | compile the webapp
+   command:       go build webserver.go chdir=/opt/webserver
+   when:          _code.changed
+   notify:        restart supervisord
+
+ - name:          webapp | deploy the supervisord.conf file
+   copy:          src=webserver.conf dest=/etc/supervisor/conf.d/webserver.conf owner=root group=root mode=644
+   notify:        restart supervisord
+
+ - name:          webapp | start the service
+   supervisorctl: name=webserver state=restarted
+

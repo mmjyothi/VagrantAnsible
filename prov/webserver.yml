@@ -1,0 +1,10 @@
+#!/usr/bin/ansible-playbook
+---
+
+ - hosts:           webserver 
+   sudo:            true
+
+
+   roles:
+   - { role: webserver }
+
